@@ -11,8 +11,8 @@ import multiprocessing as mp
 def _compile_special_tokens(
         special_tokens: list[str]
 ) -> re.Pattern[str]:
-    special_tokens.sort(key = len, reverse = True)
-    toks = '(' + '|'.join(re.escape(t) for t in special_tokens) + ')'
+    toks_sorted = sorted(special_tokens, key = len, reverse = True)
+    toks = '(' + '|'.join(re.escape(t) for t in toks_sorted) + ')'
     return re.compile(toks)
 
 def _split_special_tokens(
@@ -107,24 +107,24 @@ class BpeTokenizer:
     
     def counting_pairs(
             self,
-            corpus_byte_seq: list[list[bytes]]
+            corpus_byte_dict: dict[tuple[bytes,...], int]
     ) -> None:
         """
         Optimizing the merging step The naïve implementation of BPE training in the stylized example above is slow because for every merge, it iterates over all byte pairs to identify the most frequent pair. However, the only pair counts that change after each merge are those that overlap with the merged pair. Thus, BPE training speed can be improved by indexing the counts of all pairs and incrementally updating these counts, rather than explicitly iterating over each pair of bytes to count pair frequencies. You can get significant speedups with this caching procedure, though we note that the merging part of BPE training is not parallelizable in Python.
         """
         pair_counter = Counter()
-        for seq in corpus_byte_seq:
+        for seq, freq in corpus_byte_dict.items():
         # 长度 < 2，不可能产生 pair
             if len(seq) < 2:
                 continue
             for a, b in zip(seq, seq[1:]):
-                pair_counter[(a, b)] += 1
+                pair_counter[(a, b)] += freq
         self.bytes_pair_count = dict(pair_counter)
 
     def merging_pairs(
             self,
-            corpus_byte_seq: list[list[bytes]]
-    ) -> list[list[bytes]]:
+            corpus_byte_dict: dict[tuple[bytes,...], int]
+    ) -> dict[tuple[bytes,...], int]:
         
         best_pair = max(
                 self.bytes_pair_count.items(),
@@ -132,9 +132,9 @@ class BpeTokenizer:
         )[0]
         a, b = best_pair
         new_tok = a + b
-        new_corpus = []
+        new_corpus = {}
         
-        for tok_seq in corpus_byte_seq:
+        for tok_seq in corpus_byte_dict:
             new_tok_seq = []
             i = 0
             while i < len(tok_seq):
@@ -144,7 +144,8 @@ class BpeTokenizer:
                 else:
                     new_tok_seq.append(tok_seq[i])
                     i += 1
-            new_corpus.append(new_tok_seq)
+            new_seq = tuple(new_tok_seq)
+            new_corpus[new_seq] = new_corpus.get(new_seq, 0) + corpus_byte_dict[tok_seq]
         
         self.merges.append(best_pair)
         self.vocab[len(self.vocab)] = new_tok
@@ -158,7 +159,7 @@ class BpeTokenizer:
         raw = file.read()
         text = raw.decode("utf-8", errors="ignore")
         corpus_split_seq = _split_special_tokens(text, self.special_tokens)
-        corpus_byte_seq: list[list[bytes]] = []
+        corpus_byte_dict: dict[tuple[bytes,...], int] = {}
 
         for part in corpus_split_seq:
             if not part:
@@ -167,13 +168,17 @@ class BpeTokenizer:
                 continue
             for tok in self.pretokenizer(part):
                 bs = tok.encode("utf-8",errors="ignore")
-                corpus_byte_seq.append([bytes([b]) for b in bs]) 
+                seq = tuple(bytes([b]) for b in bs)
+                corpus_byte_dict[seq] = corpus_byte_dict.get(seq, 0) + 1
 
         while len(self.vocab) < self.vocab_size:
-            self.counting_pairs(corpus_byte_seq)
+            self.counting_pairs(corpus_byte_dict)
             if not self.bytes_pair_count:
                 break
-            corpus_byte_seq = self.merging_pairs(corpus_byte_seq)
+            best_freq = max(self.bytes_pair_count.values())
+            if best_freq <= 1:
+                break
+            corpus_byte_dict = self.merging_pairs(corpus_byte_dict)
                
         
 
