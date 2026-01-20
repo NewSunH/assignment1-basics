@@ -1,8 +1,34 @@
-import os
+from dataclasses import dataclass
+from re import split
 from typing import BinaryIO
+import regex as re
+from dataclasses import dataclass, field
+from typing import ClassVar
+import os
 
+def _compile_special_tokens(
+        special_tokens: list[str]
+) -> re.Pattern[str]:
+    special_tokens.sort(key = len, reverse = True)
+    toks = '(' + '|'.join(re.escape(t) for t in special_tokens) + ')'
+    return re.compile(toks)
 
-def find_chunk_boundaries(
+def _split_special_tokens(
+        corpus: str,
+        special_tokens: list[str]
+) -> list[str] :
+    '''
+    输入：
+    - corpus字符串
+    - special tokens 字符串列表
+    输出：
+    - 分割special tokens 的 corpus
+    '''
+    re_compiled_toks = _compile_special_tokens(special_tokens)
+    splited_corpus = re.split(re_compiled_toks, corpus)
+    return splited_corpus
+
+def _find_chunk_boundaries(
     file: BinaryIO,
     desired_num_chunks: int,
     split_special_token: bytes,
@@ -48,15 +74,34 @@ def find_chunk_boundaries(
     # Make sure all boundaries are unique, but might be fewer than desired_num_chunks
     return sorted(set(chunk_boundaries))
 
+@dataclass
+class BpeTokenizer:
+    special_tokens: list[str]
 
-## Usage
-with open("...", "rb") as f:
-    num_processes = 4
-    boundaries = find_chunk_boundaries(f, num_processes, b"<|endoftext|>")
+    PAT: ClassVar[str] = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+    pretokenize_jobs: int = 4
 
-    # The following is a serial implementation, but you can parallelize this
-    # by sending each start/end pair to a set of processes.
-    for start, end in zip(boundaries[:-1], boundaries[1:]):
-        f.seek(start)
-        chunk = f.read(end - start).decode("utf-8", errors="ignore")
-        # Run pre-tokenization on your chunk and store the counts for each pre-token
+    vocab: dict[int, bytes] = field(default_factory=dict)
+    merges: list[tuple[bytes, bytes]] = field(default_factory=list)
+
+    def __init_vocab__(self):
+        self.vocab = {}
+        for i in range(256):
+            self.vocab[i] = bytes([i])
+        for tok in self.special_tokens:
+            self.vocab[len(self.vocab)] = tok.encode("utf-8")
+    
+    def __post_init__(self):
+        self.__init_vocab__()
+
+    def pretokenizer(
+            self,
+            corpus: str
+    ) -> list[str]:
+        return re.findall(self.PAT, corpus)
+    
+    # def train_bpe(
+    #         self,
+    #         corpus: BinaryIO,
+
+    # )
