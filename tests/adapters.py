@@ -596,5 +596,6 @@ def run_train_bpe(
         vocab_size=vocab_size,
     )
     with open(input_path, "rb") as f:
+        tokenizer.pretokenize_jobs = 16
         tokenizer.train_from_file(f)
     return tokenizer.vocab, tokenizer.merges
