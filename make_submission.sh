@@ -36,6 +36,7 @@ zip -r "$output_file" . \
     -x '*.nix' \
     -x '.direnv/*' \
     -x '.envrv' \
-    -x 'data/*'
+    -x 'data/*' \
+    -x 'outputs/*'
 
 echo "All files have been compressed into $output_file"

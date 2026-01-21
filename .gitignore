@@ -166,5 +166,12 @@ cython_debug/
 
 .direnv
 
-answer
 data
+outputs
+_minted
+*.aux
+*latexmk
+*.fls
+*.out
+*.synctex.gz
+*.xdv
