@@ -425,7 +425,53 @@ def run_transformer_lm(
         Float[Tensor, "batch_size sequence_length vocab_size"]: Tensor with the predicted unnormalized
         next-word distribution for each token.
     """
-    raise NotImplementedError
+    from cs336_basics.transformer import TransformerLm, TransformerBlock
+
+    transformer_lm = TransformerLm(
+        vocab_size=vocab_size,
+        context_length=context_length,
+        d_model=d_model,
+        num_layers=num_layers,
+        num_heads=num_heads,
+        d_ff=d_ff,
+        rope_theta=rope_theta,
+    )
+
+    transformer_lm.embedding.load_state_dict(
+        {"embedding_matrix": weights["token_embeddings.weight"]}
+    )
+
+    for layer_idx in range(num_layers):
+        block = transformer_lm.transformer_blocks[layer_idx]
+        assert isinstance(block, TransformerBlock), "幽默ModuleList不是Generic[T]"
+        W_Q = weights[f"layers.{layer_idx}.attn.q_proj.weight"]
+        W_K = weights[f"layers.{layer_idx}.attn.k_proj.weight"]
+        W_V = weights[f"layers.{layer_idx}.attn.v_proj.weight"]
+        W_O = weights[f"layers.{layer_idx}.attn.output_proj.weight"]
+
+        W_KQV = torch.concat([W_K, W_Q, W_V], dim=0)
+        block.mhsa.W_KQV.load_state_dict({"weights": W_KQV})
+        block.mhsa.W_O.load_state_dict({"weights": W_O})
+
+        block.rmsnorm1.load_state_dict(
+            {"gain": weights[f"layers.{layer_idx}.ln1.weight"]}
+        )
+        block.rmsnorm2.load_state_dict(
+            {"gain": weights[f"layers.{layer_idx}.ln2.weight"]}
+        )
+
+        block.ffn.load_state_dict(
+            {
+                "weight1": weights[f"layers.{layer_idx}.ffn.w1.weight"],
+                "weight2": weights[f"layers.{layer_idx}.ffn.w2.weight"],
+                "weight3": weights[f"layers.{layer_idx}.ffn.w3.weight"],
+            }
+        )
+
+    transformer_lm.norm.load_state_dict({"gain": weights["ln_final.weight"]})
+    transformer_lm.lm_head.load_state_dict({"weights": weights["lm_head.weight"]})
+
+    return transformer_lm.forward(in_indices)
 
 
 def run_rmsnorm(
