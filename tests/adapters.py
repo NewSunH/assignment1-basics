@@ -158,7 +158,14 @@ def run_multihead_self_attention(
         Float[Tensor, " ... sequence_length d_out"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    raise NotImplementedError
+    from cs336_basics.attention import MultipleHeadSelfAttention as Mhsa
+
+    mhsa = Mhsa(d_model=d_model, num_heads=num_heads, max_seq_len=1, theta=1.0)
+    W_KQV = torch.concat([k_proj_weight, q_proj_weight, v_proj_weight], dim=0)
+    mhsa.W_O.load_state_dict({"weights": o_proj_weight})
+    mhsa.W_QKV.load_state_dict({"weights": W_KQV})
+    out = mhsa.forward(in_features, None)
+    return out
 
 
 def run_multihead_self_attention_with_rope(
@@ -198,7 +205,16 @@ def run_multihead_self_attention_with_rope(
         Float[Tensor, " ... sequence_length d_out"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    raise NotImplementedError
+    from cs336_basics.attention import MultipleHeadSelfAttention as Mhsa
+
+    mhsa = Mhsa(
+        d_model=d_model, num_heads=num_heads, max_seq_len=max_seq_len, theta=theta
+    )
+    W_KQV = torch.concat([k_proj_weight, q_proj_weight, v_proj_weight], dim=0)
+    mhsa.W_O.load_state_dict({"weights": o_proj_weight})
+    mhsa.W_QKV.load_state_dict({"weights": W_KQV})
+    out = mhsa.forward(in_features, token_positions, rope=True)
+    return out
 
 
 def run_rope(
