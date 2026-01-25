@@ -163,7 +163,7 @@ def run_multihead_self_attention(
     mhsa = Mhsa(d_model=d_model, num_heads=num_heads, max_seq_len=1, theta=1.0)
     W_KQV = torch.concat([k_proj_weight, q_proj_weight, v_proj_weight], dim=0)
     mhsa.W_O.load_state_dict({"weights": o_proj_weight})
-    mhsa.W_QKV.load_state_dict({"weights": W_KQV})
+    mhsa.W_KQV.load_state_dict({"weights": W_KQV})
     out = mhsa.forward(in_features, None)
     return out
 
@@ -212,7 +212,7 @@ def run_multihead_self_attention_with_rope(
     )
     W_KQV = torch.concat([k_proj_weight, q_proj_weight, v_proj_weight], dim=0)
     mhsa.W_O.load_state_dict({"weights": o_proj_weight})
-    mhsa.W_QKV.load_state_dict({"weights": W_KQV})
+    mhsa.W_KQV.load_state_dict({"weights": W_KQV})
     out = mhsa.forward(in_features, token_positions, rope=True)
     return out
 
@@ -312,7 +312,38 @@ def run_transformer_block(
         Float[Tensor, "batch sequence_length d_model"] Tensor with the output of
         running the Transformer block on the input features while using RoPE.
     """
-    raise NotImplementedError
+    from cs336_basics.transformer import TransformerBlock
+
+    transformer_block = TransformerBlock(
+        d_model=d_model,
+        num_heads=num_heads,
+        d_ff=d_ff,
+        max_seq_len=max_seq_len,
+        theta=theta,
+    )
+    W_Q = weights["attn.q_proj.weight"]
+    W_K = weights["attn.k_proj.weight"]
+    W_V = weights["attn.v_proj.weight"]
+    W_O = weights["attn.output_proj.weight"]
+    W_KQV = torch.concat([W_K, W_Q, W_V], dim=0)
+    transformer_block.mhsa.W_KQV.load_state_dict({"weights": W_KQV})
+    transformer_block.mhsa.W_O.load_state_dict({"weights": W_O})
+
+    transformer_block.rmsnorm1.load_state_dict({"gain": weights["ln1.weight"]})
+    transformer_block.rmsnorm2.load_state_dict({"gain": weights["ln2.weight"]})
+
+    ffnw1 = weights["ffn.w1.weight"]
+    ffnw2 = weights["ffn.w2.weight"]
+    ffnw3 = weights["ffn.w3.weight"]
+    transformer_block.ffn.load_state_dict(
+        {
+            "weight1": ffnw1,
+            "weight2": ffnw2,
+            "weight3": ffnw3,
+        }
+    )
+    out = transformer_block.forward(in_features)
+    return out
 
 
 def run_transformer_lm(

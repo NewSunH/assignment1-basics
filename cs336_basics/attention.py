@@ -64,7 +64,7 @@ class MultipleHeadSelfAttention(nn.Module):
         super().__init__()
         self.d_key = d_model // num_heads
         self.d_value = d_model // num_heads
-        self.W_QKV = Linear(d_model, 3 * d_model, device=device, dtype=dtype)
+        self.W_KQV = Linear(d_model, 3 * d_model, device=device, dtype=dtype)
         self.W_O = Linear(d_model, d_model, device=device, dtype=dtype)
         self.max_seq_len = max_seq_len
         self.theta = theta
@@ -83,8 +83,8 @@ class MultipleHeadSelfAttention(nn.Module):
         rope: bool = False,
     ):
 
-        QKV = self.W_QKV.forward(x)
-        K, Q, V = QKV.chunk(3, dim=-1)
+        KQV = self.W_KQV.forward(x)
+        K, Q, V = KQV.chunk(3, dim=-1)
 
         Q = einops.rearrange(Q, "b l (h d) -> b h l d", h=self.num_heads)
         K = einops.rearrange(K, "b l (h d) -> b h l d", h=self.num_heads)
