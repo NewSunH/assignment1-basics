@@ -1,7 +1,9 @@
+import math
 import torch
 from torch import nn, Tensor
 
 from jaxtyping import Float, Int
+import numpy as np
 
 
 def cross_entropy(
@@ -77,3 +79,63 @@ class AdamW(torch.optim.Optimizer):
                     param.data.add_(param.data, alpha=-lr * weight_decay)
 
         return loss
+
+
+def gradient_clipping(parameters, max_norm: float, eps: float = 1e-6):
+    parameters = list(parameters)
+
+    total_norm_sq = 0.0
+    for p in parameters:
+        if p.grad is None:
+            continue
+        grad = p.grad
+        total_norm_sq += grad.norm(2).item() ** 2
+
+    total_norm = total_norm_sq**0.5
+    clip_coef = max_norm / (total_norm + eps)
+    if clip_coef < 1.0:
+        for p in parameters:
+            if p.grad is not None:
+                p.grad.mul_(clip_coef)
+    return total_norm
+
+
+def data_loading(
+    x: np.typing.NDArray[np.int_],
+    batch_size: int,
+    context_length: int,
+    device: torch.device | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    max_start = len(x) - context_length - 1
+    starts = np.random.randint(0, max_start, size=batch_size)
+    inputs = []
+    targets = []
+    for s in starts:
+        inputs.append(x[s : s + context_length])
+        targets.append(x[s + 1 : s + 1 + context_length])
+    inputs = np.stack(inputs)
+    targets = np.stack(targets)
+    inputs = torch.tensor(inputs, dtype=torch.long, device=device)
+    targets = torch.tensor(targets, dtype=torch.long, device=device)
+
+    return inputs, targets
+
+
+def learning_rate_schedule(
+    t: int,
+    lr_max: float,
+    lr_min: float,
+    warmup_iters: int,
+    cosine_cycle_iters: int,
+):
+    if t < warmup_iters:
+        # linear warmup
+        return lr_max * t / warmup_iters
+
+    elif t <= cosine_cycle_iters:
+        # cosine decay
+        progress = (t - warmup_iters) / (cosine_cycle_iters - warmup_iters)
+        return lr_min + 0.5 * (1 + math.cos(math.pi * progress)) * (lr_max - lr_min)
+
+    else:
+        return lr_min
