@@ -1,9 +1,11 @@
 import math
+import typing
 import torch
 from torch import nn, Tensor
 
 from jaxtyping import Float, Int
 import numpy as np
+import os
 
 
 def cross_entropy(
@@ -106,8 +108,13 @@ def data_loading(
     context_length: int,
     device: torch.device | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    max_start = len(x) - context_length - 1
-    starts = np.random.randint(0, max_start, size=batch_size)
+    # We need (input, target) windows of length context_length, where targets are inputs shifted by 1.
+    # For a start index s, we access x[s : s+context_length] and x[s+1 : s+1+context_length],
+    # so the largest valid s is len(x) - context_length - 1.
+    # np.random.randint uses an exclusive high bound, so high must be (largest_valid_s + 1)
+    # = len(x) - context_length.
+    max_start_exclusive = len(x) - context_length
+    starts = np.random.randint(0, max_start_exclusive, size=batch_size)
     inputs = []
     targets = []
     for s in starts:
@@ -139,3 +146,29 @@ def learning_rate_schedule(
 
     else:
         return lr_min
+
+
+def save_checkpoint(
+    model: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    iteration: int,
+    out: str | os.PathLike | typing.BinaryIO | typing.IO[bytes],
+) -> None:
+
+    checkpoint = {
+        "model_state_dict": model.state_dict(),
+        "optimizer_state_dict": optimizer.state_dict(),
+        "iteration": int(iteration),
+    }
+    torch.save(checkpoint, out)
+
+
+def load_checkpoint(
+    src: str | os.PathLike | typing.BinaryIO | typing.IO[bytes],
+    model: nn.Module,
+    optimizer: torch.optim.Optimizer,
+) -> int:
+    checkpoint = torch.load(src, map_location="cpu")
+    model.load_state_dict(checkpoint["model_state_dict"])
+    optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+    return int(checkpoint["iteration"])
