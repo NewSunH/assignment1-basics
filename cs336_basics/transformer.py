@@ -75,6 +75,14 @@ class TransformerLm(nn.Module):
         dtype: torch.dtype | None = None,
     ):
         super().__init__()
+        self.vocab_size = vocab_size
+        self.context_length = context_length
+        self.d_model = d_model
+        self.num_layers = num_layers
+        self.num_heads = num_heads
+        self.d_ff = d_ff
+        self.rope_theta = rope_theta
+
         self.embedding = Embedding(vocab_size, d_model, device=device, dtype=dtype)
         self.transformer_blocks = nn.ModuleList(
             [
@@ -103,3 +111,89 @@ class TransformerLm(nn.Module):
         data = self.norm.forward(data)
         logits = self.lm_head.forward(data)
         return logits
+
+    @torch.no_grad()
+    def generate(
+        self,
+        input_ids: Int[Tensor, "batch_size sequence_length"],
+        max_new_tokens: int,
+        *,
+        temperature: float = 1.0,
+        top_k: int | None = None,
+        top_p: float | None = None,
+        eos_token_id: int | None = None,
+    ) -> Int[Tensor, "batch_size new_sequence_length"]:
+        """Autoregressive decoding for this Transformer LM.
+
+        - Automatically truncates the left context to at most `self.context_length`.
+        - If `temperature<=0`, uses greedy decoding.
+        - Optionally applies top-k and/or top-p (nucleus) sampling.
+        - If `eos_token_id` is provided, stops early once all sequences emit EOS.
+        """
+
+        if max_new_tokens <= 0:
+            return input_ids
+
+        if top_k is not None and top_k <= 0:
+            top_k = None
+        if top_p is not None and not (0.0 < float(top_p) <= 1.0):
+            raise ValueError("top_p must be in (0, 1].")
+
+        generated = input_ids
+        batch_size = generated.shape[0]
+        finished = torch.zeros(batch_size, dtype=torch.bool, device=generated.device)
+
+        for _ in range(max_new_tokens):
+            idx_cond = generated[:, -self.context_length :]
+            logits = self.forward(idx_cond)[:, -1, :]  # (B, vocab)
+
+            if temperature is None or temperature <= 0:
+                next_token = torch.argmax(logits, dim=-1, keepdim=True)
+            else:
+                logits = logits / float(temperature)
+
+                if top_k is not None:
+                    k = min(int(top_k), logits.shape[-1])
+                    topk_vals, _ = torch.topk(logits, k, dim=-1)
+                    kth = topk_vals[:, -1].unsqueeze(-1)
+                    logits = torch.where(
+                        logits < kth, torch.full_like(logits, -torch.inf), logits
+                    )
+
+                if top_p is not None:
+                    sorted_logits, sorted_idx = torch.sort(
+                        logits, descending=True, dim=-1
+                    )
+                    sorted_probs = torch.softmax(sorted_logits, dim=-1)
+                    cumprobs = torch.cumsum(sorted_probs, dim=-1)
+
+                    # Remove tokens with cumulative prob above top_p (keep at least 1 token)
+                    to_remove = cumprobs > float(top_p)
+                    to_remove[..., 0] = False
+                    sorted_logits = torch.where(
+                        to_remove,
+                        torch.full_like(sorted_logits, -torch.inf),
+                        sorted_logits,
+                    )
+                    logits = torch.full_like(logits, -torch.inf).scatter(
+                        -1, sorted_idx, sorted_logits
+                    )
+
+                probs = torch.softmax(logits, dim=-1)
+                next_token = torch.multinomial(probs, num_samples=1)
+
+            if eos_token_id is not None:
+                next_token = torch.where(
+                    finished.unsqueeze(-1),
+                    torch.full_like(next_token, int(eos_token_id)),
+                    next_token,
+                )
+
+            generated = torch.cat([generated, next_token.to(dtype=torch.long)], dim=-1)
+
+            if eos_token_id is not None:
+                finished = finished | (next_token.squeeze(-1) == int(eos_token_id))
+                if bool(finished.all()):
+                    break
+
+        return generated
