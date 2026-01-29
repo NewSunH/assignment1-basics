@@ -19,7 +19,12 @@
 \usepackage[most]{tcolorbox}
 \usepackage[ruled,vlined,linesnumbered]{algorithm2e}
 
+\usepackage{seqsplit}
+
 \usepackage{fontspec}
+
+% Allow line breaks in very long \texttt{...} strings (e.g., longest tokens).
+\newcommand{\ttbreak}[1]{\texttt{\seqsplit{#1}}}
 
 
 % 中文字体（Noto Sans CJK）
@@ -117,7 +122,16 @@ implemented in \texttt{\slash cs336\_basics\slash bpe.py}
 \end{problem}
 
 \begin{problem}{train\_bpe\_expts\_owt}{BPE Training on OpenWebText (2 points)}
-(untrained, that's too demanding.)
+\begin{enumerate}[label=(\alph*)]
+      \item Train a byte-level BPE tokenizer on the OpenWebText dataset, using a maximum vocabulary size of 32,000. Serialize the resulting vocabulary and merges to disk for further inspection. What is the longest token in the vocabulary? Does it make sense?\\
+            \textbf{answer: }It takes 4810.98s (1h 20m 10.98s). The longest token is \ttbreak{ÃĥÃĤÃĥÃĤÃĥÃĤÃĥÃĤÃĥÃĤÃĥÃĤÃĥÃĤÃĥÃĤÃĥÃĤÃĥÃĤÃĥÃĤÃĥÃĤÃĥÃĤÃĥÃĤÃĥÃĤÃĥÃĤ} (strange, I can't tell what it is) and \ttbreak{----------------------------------------------------------------} (64 dashes). It does make sence because I found them in the owt.
+      \item Compare and contrast the tokenizer that you get training on TinyStories versus OpenWebText.\\
+            \texttt{bytes/token (lower is better compression)\\
+                  TS tok on TS: 3.979507\\
+                  TS tok on OWT: 3.159600\\
+                  OWT tok on TS: 3.890763\\
+                  OWT tok on OWT: 4.344127}
+\end{enumerate}
 \end{problem}
 
 \subsection{BPE Tokenizer: Encoding and Decoding}

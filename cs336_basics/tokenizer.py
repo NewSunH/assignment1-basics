@@ -43,8 +43,23 @@ class Tokenizer:
         merges_filepath: str,
         special_tokens: list[str] | None = None,
     ):
-        with open(vocab_filepath) as vocab_f:
-            vocab: dict[int, bytes] = json.load(vocab_f)
+        # Our BPE serialization follows GPT-2 style:
+        # - vocab.json maps an encoded string (representing arbitrary bytes) -> token_id
+        # - merges.txt stores two encoded strings per line
+        # We must decode the encoded strings back to raw bytes to build the runtime vocab.
+        encoder = BpeTokenizer._bytes_to_unicode()
+        decoder = {v: k for k, v in encoder.items()}
+
+        def decode_token_str(token_str: str) -> bytes:
+            return bytes(decoder[ch] for ch in token_str)
+
+        with open(vocab_filepath, "r", encoding="utf-8") as vocab_f:
+            raw_vocab: dict[str, int] = json.load(vocab_f)
+
+        vocab: dict[int, bytes] = {}
+        for token_str, token_id in raw_vocab.items():
+            vocab[int(token_id)] = decode_token_str(token_str)
+
         merges: list[tuple[bytes, bytes]] = []
         with open(merges_filepath, "r", encoding="utf-8") as f:
             for line in f:
@@ -52,7 +67,7 @@ class Tokenizer:
                 if not line or line.startswith("#"):
                     continue
                 a, b = line.split()
-                merges.append((a.encode("utf-8"), b.encode("utf-8")))
+                merges.append((decode_token_str(a), decode_token_str(b)))
         return cls(vocab, merges, special_tokens)
 
     @classmethod

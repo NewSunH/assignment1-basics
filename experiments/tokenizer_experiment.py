@@ -18,7 +18,6 @@ def _default_paths() -> dict[str, str]:
 
 
 def _print_longest_token(tokenizer: BpeTokenizer) -> None:
-    # tokenizer.vocab: dict[int, bytes]
     vocab_items = list(tokenizer.vocab.items())
     if not vocab_items:
         print("Vocab is empty.")
