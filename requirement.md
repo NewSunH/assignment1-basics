@@ -47,7 +47,7 @@
 	- 记录训练耗时、内存；找 vocab 中最长 token 并判断是否合理。
 	- 资源上限（CPU）：≤30min、≤30GB RAM。
 	- 写 profile：哪里最耗时。
-- [ ] **train_bpe_expts_owt (2pt)**：
+- [x] **train_bpe_expts_owt (2pt)**：
 	- 用 OpenWebText 训练 32,000 vocab 的 BPE；序列化；最长 token 是否合理。
 	- 对比 TinyStories tokenizer vs OWT tokenizer（1–2 句）。
 	- 资源上限（CPU）：≤12h、≤100GB RAM。
@@ -57,7 +57,7 @@
 	- 推荐接口：`__init__` / `from_files` / `encode` / `encode_iterable` / `decode`。
 	- 解码时遇到非法 UTF-8 需要用替换字符（等价于 `errors='replace'`）。
 	- 测试：实现 `tests/adapters.py` 的 `get_tokenizer`，再跑 `uv run pytest tests/test_tokenizer.py`。
-- [ ] **tokenizer_experiments (4pt)**：
+- [x] **tokenizer_experiments (4pt)** ：
 	- 采样 TinyStories 和 OWT 文档，计算压缩率（bytes/token）。
 	- 用 TinyStories tokenizer 去 tokenize OWT 样本，观察变化。
 	- 估计 tokenizer 吞吐（bytes/s），估算 tokenize Pile 需要多久。
