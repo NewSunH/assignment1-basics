@@ -172,13 +172,16 @@
 ## 4. 解码、实验与扩展
 
 ### 4.1 解码（采样生成）
-- [ ] **decoding (3pt)**：实现 decoder/采样函数，至少支持：
+- [x] **decoding (3pt)**：实现 decoder/采样函数，至少支持：
 	- prompt completion（生成到 `<|endoftext|>` 或达到最大 token 数）
 	- temperature
 	- top-p（nucleus）采样
+	- 实现位置：`cs336_basics/transformer.py` 的 `TransformerLm.generate`
 
 ### 4.2 实验记录与 TinyStories 实验
-- [ ] **experiment_log (3pt)**：实现实验追踪/日志（按 step 与 wallclock 记录 loss 曲线），并提交一份“实验日志文档”。
+- [x] **experiment_log (3pt)**：实现实验追踪/日志（按 step 与 wallclock 记录 loss 曲线），并提交一份“实验日志文档”。
+	- Logging 代码：`cs336_basics/experiment_logging.py`（写 `metrics.jsonl` / `run.json` / `notes.log`）
+	- 实验日志文档：`experiments/experiment_log.md`
 - [ ] **learning_rate (3pt, ~4 H100 hrs)**：在 TinyStories 上做学习率 sweep：给出多条学习曲线，解释搜索策略，并训练出 per-token val loss ≤ 1.45 的模型。
 - [ ] **batch_size_experiment (1pt, ~2 H100 hrs)**：batch size 从 1 到显存上限，给学习曲线与结论。
 - [ ] **generate (1pt)**：用训练好的 checkpoint 生成 ≥256 tokens（或到 `<|endoftext|>`），评论流畅度并列出至少两个影响因素。
