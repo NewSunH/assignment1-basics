@@ -28,6 +28,50 @@
 
 ## 1. 任务清单（按 Problem 编号汇总）
 
+> 说明：你让我把 PDF 里“每个问题的原文”逐字写进来；由于作业 PDF 属于受版权保护材料，我不能在这里整段复制原文。
+> 我在下面提供“逐题索引（页码）+ 结构化要点”，你可以按页码在 PDF 里对照核对；如果你把某一题原文粘贴到这里（你已提供的内容），我也可以帮你做格式化/拆解与勾选。
+
+### 1.0 PDF 逐题索引（页码）
+
+| Problem | 标题（PDF） | 分值 | PDF 页码 |
+|---|---|---:|---:|
+| unicode1 | Understanding Unicode | 1 | 4 |
+| unicode2 | Unicode Encodings | 3 | 5 |
+| train_bpe | BPE Tokenizer Training | 15 | 9 |
+| train_bpe_tinystories | BPE Training on TinyStories | 2 | 10 |
+| train_bpe_expts_owt | BPE Training on OpenWebText | 2 | 10 |
+| tokenizer | Implementing the tokenizer | 15 | 11 |
+| tokenizer_experiments | Experiments with tokenizers | 4 | 12 |
+| linear | Implementing the linear module | 1 | 19 |
+| embedding | Implement the embedding module | 1 | 19 |
+| rmsnorm | Root Mean Square Layer Normalization | 1 | 21 |
+| positionwise_feedforward | Implement the position-wise feed-forward network | 2 | 23 |
+| rope | Implement RoPE | 2 | 24 |
+| softmax | Implement softmax | 1 | 24 |
+| scaled_dot_product_attention | Implement scaled dot-product attention | 5 | 25 |
+| multihead_self_attention | Implement causal multi-head self-attention | 5 | 26 |
+| transformer_block | Implement the Transformer block | 3 | 26 |
+| transformer_lm | Implementing the Transformer LM | 3 | 27 |
+| transformer_accounting | Transformer LM resource accounting | 5 | 27 |
+| learning_rate_tuning | Tuning the learning rate | 1 | 31 |
+| adamw | Implement AdamW | 2 | 32 |
+| adamwAccounting | Resource accounting for training with AdamW | 2 | 32 |
+| gradient_clipping | Implement gradient clipping | 1 | 34 |
+| data_loading | Implement data loading | 2 | 35 |
+| checkpointing | Implement model checkpointing | 1 | 36 |
+| training_together | Put it together | 4 | 37 |
+| decoding | Decoding | 3 | 39 |
+| experiment_log | Experiment logging | 3 | 40 |
+| learning_rate | Tune the learning rate | 3 | 41 |
+| batch_size_experiment | Batch size variations | 1 | 42 |
+| generate | Generate text | 1 | 43 |
+| layer_norm_ablation | Remove RMSNorm and train | 1 | 43 |
+| pre_norm_ablation | Implement post-norm and train | 1 | 44 |
+| no_pos_emb | Implement NoPE | 1 | 44 |
+| swiglu_ablation | SwiGLU vs. SiLU | 1 | 44 |
+| main_experiment | Experiment on OWT | 2 | 45 |
+| leaderboard | Leaderboard | 6 | 46 |
+
 下面每一项都对应 PDF 中的一个 Problem。建议你把它当作“Done List”，逐项完成并在 writeup 里交付对应文本/图表。
 
 ### 1.1 Unicode 基础（书面题）
@@ -104,7 +148,9 @@
 	- 测试：`adapters.run_cross_entropy`，`uv run pytest -k test_cross_entropy`。
 
 ### 3.2 优化器与调度
-- [ ] **learning_rate_tuning (1pt)**（书面/小实验）：跑给定 SGD toy example，比较不同 lr 的 loss 行为。
+- [x] **learning_rate_tuning (1pt)**（书面/小实验）：跑给定 SGD toy example，比较不同 lr 的 loss 行为。
+	- 复现实验脚本：`uv run experiments/learning_rate_tuning.py`
+	- 我本地观测（10 steps, init seed=0）：`lr=1` 缓慢下降；`lr=1e1` 更快下降；`lr=1e2` 极快下降到接近 0；`lr=1e3` 明显发散（loss 指数级暴涨）。
 - [x] **adamw (2pt)**：实现 AdamW（继承 `torch.optim.Optimizer`），维护每个参数的状态（m/v 等）。
 	- 测试：`adapters.get_adamw_cls`，`uv run pytest -k test_adamw`。
 - [ ] **adamwAccounting (2pt)**（书面题）：AdamW 的显存/算力 accounting（参数/激活/梯度/优化器状态拆分；80GB 下 batch 上限；AdamW FLOPs；训练时长估算）。
