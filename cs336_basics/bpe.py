@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from re import split
 from typing import BinaryIO
+
 import regex as re
 from dataclasses import dataclass, field
 from typing import ClassVar
@@ -9,6 +10,11 @@ import os
 from collections import Counter
 import multiprocessing as mp
 from tqdm import tqdm
+
+
+# Reuse single-byte objects to avoid allocating millions of tiny `bytes([b])`
+# instances when building initial byte-level sequences.
+_BYTE_ALPHABET: tuple[bytes, ...] = tuple(bytes([i]) for i in range(256))
 
 
 def _compile_special_tokens(special_tokens: list[str]) -> re.Pattern[str]:
@@ -104,7 +110,7 @@ def _chunk_worker_count(
             continue
         for tok in re.findall(pat, part):
             bs = tok.encode("utf-8", errors="ignore")
-            seq = tuple(bytes([b]) for b in bs)
+            seq = tuple(_BYTE_ALPHABET[b] for b in bs)
             corpus_byte_dict[seq] = corpus_byte_dict.get(seq, 0) + 1
     return corpus_byte_dict
 
@@ -330,7 +336,7 @@ class BpeTokenizer:
                     continue
                 for tok in self.pretokenizer(part):
                     bs = tok.encode("utf-8", errors="ignore")
-                    seq = tuple(bytes([b]) for b in bs)
+                    seq = tuple(_BYTE_ALPHABET[b] for b in bs)
                     corpus_byte_dict[seq] = corpus_byte_dict.get(seq, 0) + 1
         return corpus_byte_dict
 
@@ -356,7 +362,7 @@ class BpeTokenizer:
                     continue
                 for tok in self.pretokenizer(part):
                     bs = tok.encode("utf-8", errors="ignore")
-                    seq = tuple(bytes([b]) for b in bs)
+                    seq = tuple(_BYTE_ALPHABET[b] for b in bs)
                     corpus_byte_dict[seq] = corpus_byte_dict.get(seq, 0) + 1
         else:
             boundaries = _find_chunk_boundaries(
