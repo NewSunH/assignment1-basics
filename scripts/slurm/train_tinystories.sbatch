@@ -4,7 +4,7 @@
 #SBATCH --error=slurm_logs/%x_%j.err
 
 # Adjust these for your cluster
-#SBATCH --partition=gpu
+#SBATCH --partition=lfs-dev-gpu
 #SBATCH --gres=gpu:1
 #SBATCH --time=02:00:00
 #SBATCH --cpus-per-task=8
