@@ -11,9 +11,8 @@
 #SBATCH --mem=48G
 
 set -euo pipefail
-source scripts/slurm/_common.sh
 
-print_env
+cd "${SLURM_SUBMIT_DIR:-$HOME/assignment1-basics}"
 
 TRAIN_TOKENS="outputs/tinystories_train_tokens.uint16"
 VALID_TOKENS="outputs/tinystories_valid_tokens.uint16"
@@ -24,13 +23,12 @@ LR="${LR:-3e-4}"
 SEED="${SEED:-0}"
 DTYPE="${DTYPE:-bf16}"
 
-run_uv experiments/train_tinystories_lm.py \
-  --train-tokens "$TRAIN_TOKENS" \
-  --valid-tokens "$VALID_TOKENS" \
-  --lr "$LR" \
-  --seed "$SEED" \
-  --dtype "$DTYPE" \
-  --compile
-
+uv run python experiments/train_tinystories_lm.py \
+  --train-tokens "outputs/tinystories_train_tokens.uint16" \
+  --valid-tokens "outputs/tinystories_valid_tokens.uint16" \
+  --lr 3e-4 \
+  --seed 0 \
+  --dtype "bf16" 
+  
 echo "Run finished. Latest runs:"
 ls -1dt outputs/runs/* | head -n 5 || true

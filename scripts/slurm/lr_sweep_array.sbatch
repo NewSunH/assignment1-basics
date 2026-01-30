@@ -14,9 +14,8 @@
 #SBATCH --array=0-5%8
 
 set -euo pipefail
-source scripts/slurm/_common.sh
 
-print_env
+cd "${SLURM_SUBMIT_DIR:-$HOME/assignment1-basics}"
 
 TRAIN_TOKENS="outputs/tinystories_train_tokens.uint16"
 VALID_TOKENS="outputs/tinystories_valid_tokens.uint16"
@@ -30,13 +29,12 @@ DTYPE="${DTYPE:-bf16}"
 
 NAME_PREFIX="learning_rate_array"
 
-run_uv experiments/train_tinystories_lm.py \
+uv run python experiments/train_tinystories_lm.py \
   --train-tokens "$TRAIN_TOKENS" \
   --valid-tokens "$VALID_TOKENS" \
   --lr "$LR" \
   --seed "$SEED" \
   --dtype "$DTYPE" \
-  --run-name "${NAME_PREFIX}_lr${LR}_seed${SEED}" \
-  --compile
+  --run-name "${NAME_PREFIX}_lr${LR}_seed${SEED}"
 
 echo "Done lr=$LR"
