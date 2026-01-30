@@ -35,3 +35,21 @@
 
 - 导出 TSV（方便用 pgfplots 画曲线）：
   - `uv run experiments/metrics_to_tsv.py outputs/runs/<run>/metrics.jsonl`
+
+## Slurm / cs336dev（8×5090）建议跑法
+
+你现在的训练脚本是“单卡训练”的（每个 run 申请 1 张 GPU）。集群有 8 张卡时，最推荐的做法是：
+
+- **lr sweep 用数组作业 / 多个单卡作业并行**（一次性把 6–8 个 learning rate 同时跑起来）
+- **单次训练**：挑一个最好的 lr，再跑满 steps 拿到 `val loss <= 1.45` 的 checkpoint
+
+仓库里提供了可直接 `sbatch` 的模板：
+- `scripts/slurm/pretokenize_tinystories.sbatch`
+- `scripts/slurm/train_tinystories.sbatch`
+- `scripts/slurm/lr_sweep_array.sbatch`
+
+常用命令：
+- 看分区/GPU：`sinfo -o "%P %a %l %D %G"`
+- 提交：`sbatch scripts/slurm/lr_sweep_array.sbatch`
+- 排队：`squeue -u $USER`
+- 取消：`scancel <jobid>`
