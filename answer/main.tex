@@ -18,7 +18,8 @@
 \usepackage{booktabs}
 \usepackage[most]{tcolorbox}
 \usepackage[ruled,vlined,linesnumbered]{algorithm2e}
-
+\usepackage{unicode-math}
+\setmathfont{Latin Modern Math}
 \usepackage{seqsplit}
 
 \usepackage{fontspec}
@@ -281,9 +282,31 @@ implemented in \ttbreak{/cs336\_basics/experiment\_logging.py}. The logger write
 The learning rate is one of the most important hyperparameters to tune. Taking the base model you’ve trained, answer the following questions:
 \begin{enumerate}[label=(\alph*)]
       \item Perform a hyperparameter sweep over the learning rates and report the final losses (or note divergence if the optimizer diverges).\\
-            \textbf{answer: }
-      \item Folk wisdom is that the best learning rate is “at the edge of stability.” Investigate how the point at which learning rates diverge is related to your best learning rate.\\
-            \textbf{answer: }
+            \textbf{answer: }I ran a learning-rate sweep over \texttt{lr\_max} (peak learning rate in the warmup+cosine schedule) while keeping all other hyperparameters fixed (same 17M-ish model and \texttt{total\_steps=10000}, processing \texttt{327,680,000} tokens when training completes). The final validation losses are:
+
+            \begin{center}
+                  \begin{tabular}{lcc}
+                        \toprule
+                        \texttt{lr\_max} & final validation loss & note                          \\
+                        \midrule
+                        \texttt{1e-4}    & \texttt{2.7623}       & converged                     \\
+                        \texttt{2e-4}    & \texttt{2.0991}       & converged                     \\
+                        \texttt{3e-4}    & \texttt{1.8096}       & converged                     \\
+                        \texttt{5e-4}    & \texttt{1.5811}       & converged                     \\
+                        \texttt{8e-4}    & \texttt{1.4690}       & converged                     \\
+                        \texttt{1e-3}    & \texttt{1.4368}       & converged (meets $\le 1.45$)  \\
+                        \texttt{3e-3}    & \texttt{1.3713}       & best run                      \\
+                        \texttt{3e-2}    & \texttt{4.3973}       & does not learn well           \\
+                        \texttt{3e1}     & ---                   & diverged at step \texttt{188} \\
+                        \bottomrule
+                  \end{tabular}
+            \end{center}
+
+            (Reproducibility note: these correspond to run directories under \texttt{outputs/runs/}, e.g. the best run is \ttbreak{outputs/runs/20260130T032122Z}, and a divergence run is \ttbreak{outputs/runs/20260130T064527Z}.)
+      \item Folk wisdom is that the best learning rate is at the edge of stability. Investigate how the point at which learning rates diverge is related to your best learning rate.\\
+            \textbf{answer: }In this setup, catastrophic divergence happens only at extremely large \texttt{lr\_max} (e.g., \texttt{lr\_max=30} diverges quickly at step \texttt{188}). However, well before catastrophic divergence there is an \emph{effective} stability boundary where optimization stops making meaningful progress: with \texttt{lr\_max=3e-2} the run does not diverge, but the training loss barely decreases (about \texttt{5.66 \,$\to$\, 4.41}) and the final validation loss is very poor (\texttt{4.3973}).
+
+            The best learning rate I found is \texttt{lr\_max=3e-3} (final validation loss \texttt{1.3713}). This is about one order of magnitude below the point where training becomes effectively unstable (\texttt{3e-2}), and it is also far below the catastrophic divergence point (\texttt{3e1}). Empirically, performance improves as \texttt{lr\_max} increases from \texttt{1e-4} up to a few \texttt{e-3}, and then degrades sharply by \texttt{3e-2}. This supports the edge of stability heuristic if we interpret the edge as the largest learning rate that still yields stable \emph{and} productive learning dynamics, not merely not produce \texttt{NaN}.
 \end{enumerate}
 \end{problem}
 
