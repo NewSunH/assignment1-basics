@@ -1,0 +1,97 @@
+/tmp/tmpg6suqxj_/cuda_utils.c:6:10: fatal error: Python.h: No such file or directory
+    6 | #include <Python.h>
+      |          ^~~~~~~~~~
+compilation terminated.
+Traceback (most recent call last):
+  File "/home/stu2410305113/assignment1-basics/experiments/train_tinystories_lm.py", line 373, in <module>
+    main()
+  File "/home/stu2410305113/assignment1-basics/experiments/train_tinystories_lm.py", line 368, in main
+    summary = train_one_run(cfg=cfg, run_dir=run_dir)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/experiments/train_tinystories_lm.py", line 218, in train_one_run
+    logits = model(x)
+             ^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/torch/_dynamo/eval_frame.py", line 414, in __call__
+    return super().__call__(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/torch/_dynamo/eval_frame.py", line 845, in compile_wrapper
+    raise e.remove_dynamo_frames() from None  # see TORCHDYNAMO_VERBOSE=1
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/torch/_inductor/compile_fx.py", line 990, in _compile_fx_inner
+    raise InductorError(e, currentframe()).with_traceback(
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/torch/_inductor/compile_fx.py", line 974, in _compile_fx_inner
+    mb_compiled_graph = fx_codegen_and_compile(
+                        ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/torch/_inductor/compile_fx.py", line 1695, in fx_codegen_and_compile
+    return scheme.codegen_and_compile(gm, example_inputs, inputs_to_check, graph_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/torch/_inductor/compile_fx.py", line 1505, in codegen_and_compile
+    compiled_module = graph.compile_to_module()
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/torch/_inductor/graph.py", line 2319, in compile_to_module
+    return self._compile_to_module()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/torch/_inductor/graph.py", line 2325, in _compile_to_module
+    self.codegen_with_cpp_wrapper() if self.cpp_wrapper else self.codegen()
+                                                             ^^^^^^^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/torch/_inductor/graph.py", line 2264, in codegen
+    self.scheduler.codegen()
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/torch/_inductor/scheduler.py", line 5197, in codegen
+    self._codegen_partitions()
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/torch/_inductor/scheduler.py", line 5337, in _codegen_partitions
+    self._codegen(partition)
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/torch/_inductor/scheduler.py", line 5435, in _codegen
+    self.get_backend(device).codegen_node(node)
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/torch/_inductor/codegen/cuda_combined_scheduling.py", line 127, in codegen_node
+    return self._triton_scheduling.codegen_node(node)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/torch/_inductor/codegen/simd.py", line 1402, in codegen_node
+    return self.codegen_node_schedule(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/torch/_inductor/codegen/simd.py", line 1465, in codegen_node_schedule
+    src_code = kernel.codegen_kernel()
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/torch/_inductor/codegen/triton.py", line 4173, in codegen_kernel
+    **self.inductor_meta_common(),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/torch/_inductor/codegen/triton.py", line 3992, in inductor_meta_common
+    "backend_hash": torch.utils._triton.triton_hash_with_backend(),
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/torch/utils/_triton.py", line 175, in triton_hash_with_backend
+    backend = triton_backend()
+              ^^^^^^^^^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/torch/utils/_triton.py", line 167, in triton_backend
+    target = driver.active.get_current_target()
+             ^^^^^^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/triton/runtime/driver.py", line 28, in active
+    self._active = self.default
+                   ^^^^^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/triton/runtime/driver.py", line 22, in default
+    self._default = _create_driver()
+                    ^^^^^^^^^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/triton/runtime/driver.py", line 10, in _create_driver
+    return active_drivers[0]()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/triton/backends/nvidia/driver.py", line 719, in __init__
+    self.utils = CudaUtils()  # TODO: make static
+                 ^^^^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/triton/backends/nvidia/driver.py", line 63, in __init__
+    mod = compile_module_from_src(
+          ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/triton/runtime/build.py", line 89, in compile_module_from_src
+    so = _build(name, src_path, tmpdir, library_dirs or [], include_dirs or [], libraries or [], ccflags or [])
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/triton/runtime/build.py", line 51, in _build
+    subprocess.check_call(cc_cmd, stdout=subprocess.DEVNULL)
+  File "/usr/lib/python3.11/subprocess.py", line 413, in check_call
+    raise CalledProcessError(retcode, cmd)
+torch._inductor.exc.InductorError: CalledProcessError: Command '['/usr/bin/gcc', '/tmp/tmpg6suqxj_/cuda_utils.c', '-O3', '-shared', '-fPIC', '-Wno-psabi', '-o', '/tmp/tmpg6suqxj_/cuda_utils.cpython-311-x86_64-linux-gnu.so', '-lcuda', '-L/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/triton/backends/nvidia/lib', '-L/lib/x86_64-linux-gnu', '-I/home/stu2410305113/assignment1-basics/.venv/lib/python3.11/site-packages/triton/backends/nvidia/include', '-I/tmp/tmpg6suqxj_', '-I/usr/include/python3.11']' returned non-zero exit status 1.
+
+Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+

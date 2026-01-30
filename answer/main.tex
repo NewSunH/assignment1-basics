@@ -201,22 +201,90 @@ implemented in \texttt{/cs336\_basics/attention.py}
 implemented in \texttt{/cs336\_basics/transformer.py}
 \end{problem}
 
-\begin{problem}{transformer\_lm}{Implement the Transformer block (3 points)}
+\begin{problem}{transformer\_lm}{Implementing the Transformer LM (3 points)}
 implemented in \texttt{/cs336\_basics/transformer.py}
 \end{problem}
 
+\begin{problem}{transformer\_accounting}{Transformer LM resource accounting (5 points)}
+unfinished
+\end{problem}
+
+\section{Training a Transformer LM}
+\subsection{Cross-entropy loss}
+
+\begin{problem}{cross\_entropy}{Implement Cross entropy}
+implemented in \texttt{/cs336\_basics/train\_transformer.py}
+\end{problem}
+
+\subsection{The SGD Optimizer}
 
 \begin{problem}{learning\_rate\_tuning}{Tuning the learning rate (1 point)}
 As we will see, one of the hyperparameters that affects training the most is the learning rate. Let’s see that in practice in our toy example. Run the SGD example above with three other values for the learning rate: 1e1, 1e2, and 1e3, for just 10 training iterations. What happens with the loss for each of these learning rates? Does it decay faster, slower, or does it diverge (i.e., increase over the course of training)?\\
 \textbf{answer: }Running the toy SGD loop for 10 iterations, \texttt{lr=1} decreases the loss slowly while \texttt{lr=10} decreases it much faster. \texttt{lr=100} drives the loss to (near) zero within a few steps, but \texttt{lr=1000} diverges immediately and the loss explodes.
 \end{problem}
 
+\subsection{AdamW}
+
+\begin{problem}{adamw}{Implement AdamW (2 points)}
+implemented in \texttt{/cs336\_basics/train\_transformer.py}
+\end{problem}
+
+\begin{problem}{adamwAccounting}{Resource accounting for training with AdamW (2 points)}
+unfinished
+\end{problem}
+
+\subsection{Learning rate scheduling}
+
+\begin{problem}{learning\_rate\_schedule}{Implement cosine learning rate schedule with warmup}
+implemented in \texttt{/cs336\_basics/train\_transformer.py}
+\end{problem}
+
+\subsection{Gradient clipping}
+
+\begin{problem}{gradient\_clipping}{Implement gradient clipping (1 point)}
+implemented in \texttt{/cs336\_basics/train\_transformer.py}
+\end{problem}
+
+\section{Training loop}
+
+\subsection{Data Loader}
+\begin{problem}{data\_loading}{Implement data loading (2 points)}
+implemented in \texttt{/cs336\_basics/train\_transformer.py}
+\end{problem}
+
+\subsection{Checkpointing}
+\begin{problem}{checkpointing}{Implement model checkpointing (1 point)}
+implemented in \texttt{/cs336\_basics/train\_transformer.py}
+\end{problem}
+
+\subsection{Training loop}
+\begin{problem}{training\_together}{Put it together (4 points)}
+implemented in \texttt{/cs336\_basics/train\_transformer.py}
+\end{problem}
+
+
+\section{Generating text}
 \begin{problem}{decoding}{Decoding (3 points)}
 implemented in \texttt{/cs336\_basics/transformer.py} as \texttt{TransformerLm.generate}. It generates completions autoregressively from a user-provided prompt (\texttt{input\_ids}) until hitting \texttt{eos\_token\_id} (e.g. \texttt{<|endoftext|>}) or reaching \texttt{max\_new\_tokens}. It supports temperature scaling (\texttt{temperature<=0} falls back to greedy decoding) and top-p (nucleus) sampling via \texttt{top\_p}.
 \end{problem}
 
+\section{Experiments}
+\subsection{How to Run Experiments and Deliverables}
+
 \begin{problem}{experiment\_log}{Experiment logging (3 points)}
 implemented in \ttbreak{/cs336\_basics/experiment\_logging.py}. The logger writes per-step metrics with both \texttt{step} and \ttbreak{wallclock\_s} to \ttbreak{metrics.json}, and also stores run metadata (\ttbreak{run.json}) and free-form notes (\texttt{notes.log}). My running experiment log is maintained in \ttbreak{/experiments/experiment\_log.md}.
+\end{problem}
+
+\subsection{TinyStories}
+
+\begin{problem}{learning\_rate}{Tune the learning rate (3 points)}
+The learning rate is one of the most important hyperparameters to tune. Taking the base model you’ve trained, answer the following questions:
+\begin{enumerate}[label=(\alph*)]
+      \item Perform a hyperparameter sweep over the learning rates and report the final losses (or note divergence if the optimizer diverges).\\
+            \textbf{answer: }
+      \item Folk wisdom is that the best learning rate is “at the edge of stability.” Investigate how the point at which learning rates diverge is related to your best learning rate.\\
+            \textbf{answer: }
+\end{enumerate}
 \end{problem}
 
 \end{document}
