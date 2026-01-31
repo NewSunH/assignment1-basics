@@ -7,7 +7,7 @@ from jaxtyping import Float, Int
 from .attention import MultipleHeadSelfAttention as Mhsa
 from .attention import softmax
 from .normalization import RmsNorm
-from .positionwise_feedforward import FFN, silu
+from .positionwise_feedforward import FFN, SiLUFFN, matched_silu_d_ff, silu
 from .embedding import Embedding
 from .linear import Linear
 
@@ -19,7 +19,7 @@ class TransformerBlock(nn.Module):
     mhsa: Mhsa
     rmsnorm1: nn.Module
     rmsnorm2: nn.Module
-    ffn: FFN
+    ffn: nn.Module
 
     def __init__(
         self,
@@ -30,10 +30,14 @@ class TransformerBlock(nn.Module):
         theta: float,
         *,
         use_rmsnorm: bool = True,
+        use_rope: bool = True,
+        ffn_variant: str = "swiglu",
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ):
         super().__init__()
+        self.use_rope = bool(use_rope)
+        self.ffn_variant = str(ffn_variant)
         self.mhsa = Mhsa(
             d_model=d_model,
             num_heads=num_heads,
@@ -52,15 +56,27 @@ class TransformerBlock(nn.Module):
             if use_rmsnorm
             else nn.Identity()
         )
-        self.ffn = FFN(
-            d_model=d_model, d_ff=d_ff, activation=silu, device=device, dtype=dtype
-        )
+        if self.ffn_variant == "swiglu":
+            self.ffn = FFN(
+                d_model=d_model, d_ff=d_ff, activation=silu, device=device, dtype=dtype
+            )
+        elif self.ffn_variant == "silu":
+            d_ff_silu = matched_silu_d_ff(d_ff_swiglu=int(d_ff))
+            self.ffn = SiLUFFN(
+                d_model=d_model,
+                d_ff=int(d_ff_silu),
+                activation=silu,
+                device=device,
+                dtype=dtype,
+            )
+        else:
+            raise ValueError("ffn_variant must be 'swiglu' or 'silu'")
 
     def forward(
         self, x: Float[Tensor, " batch sequence_length d_model"]
     ) -> Float[Tensor, " batch sequence_length d_model"]:
 
-        y = x + self.mhsa.forward(self.rmsnorm1.forward(x), rope=True)
+        y = x + self.mhsa.forward(self.rmsnorm1.forward(x), rope=self.use_rope)
         z = y + self.ffn.forward(self.rmsnorm2.forward(y))
 
         return z
@@ -83,6 +99,8 @@ class TransformerLm(nn.Module):
         rope_theta: float,
         *,
         use_rmsnorm: bool = True,
+        use_rope: bool = True,
+        ffn_variant: str = "swiglu",
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ):
@@ -94,6 +112,8 @@ class TransformerLm(nn.Module):
         self.num_heads = num_heads
         self.d_ff = d_ff
         self.rope_theta = rope_theta
+        self.use_rope = bool(use_rope)
+        self.ffn_variant = str(ffn_variant)
 
         self.embedding = Embedding(vocab_size, d_model, device=device, dtype=dtype)
         self.transformer_blocks = nn.ModuleList(
@@ -105,6 +125,8 @@ class TransformerLm(nn.Module):
                     max_seq_len=context_length,
                     theta=rope_theta,
                     use_rmsnorm=use_rmsnorm,
+                    use_rope=use_rope,
+                    ffn_variant=ffn_variant,
                     device=device,
                     dtype=dtype,
                 )

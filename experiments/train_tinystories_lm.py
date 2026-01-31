@@ -58,6 +58,8 @@ class TrainConfig:
     rope_theta: float = 10000.0
 
     use_rmsnorm: bool = True
+    use_rope: bool = True
+    ffn_variant: str = "swiglu"  # swiglu|silu
 
     batch_size: int = 128
     total_steps: int = 10_000
@@ -160,6 +162,8 @@ def train_one_run(*, cfg: TrainConfig, run_dir: Path) -> dict[str, Any]:
         d_ff=int(cfg.d_ff),
         rope_theta=float(cfg.rope_theta),
         use_rmsnorm=bool(cfg.use_rmsnorm),
+        use_rope=bool(cfg.use_rope),
+        ffn_variant=str(cfg.ffn_variant),
         device=device,
         dtype=model_dtype,
     )
@@ -334,6 +338,19 @@ def main() -> None:
         help="If set, removes all RMSNorm layers (ablation).",
     )
 
+    p.add_argument(
+        "--no-rope",
+        action="store_true",
+        help="If set, disables RoPE (NoPE ablation: removes positional information).",
+    )
+
+    p.add_argument(
+        "--ffn-variant",
+        choices=["swiglu", "silu"],
+        default="swiglu",
+        help="FFN variant to use: swiglu (default) or silu (non-gated ablation).",
+    )
+
     p.add_argument("--eval-interval", type=int, default=200)
     p.add_argument("--eval-batches", type=int, default=200)
     p.add_argument("--log-interval", type=int, default=10)
@@ -370,6 +387,8 @@ def main() -> None:
         seed=int(args.seed),
         dtype=str(args.dtype),
         use_rmsnorm=not bool(args.no_rmsnorm),
+        use_rope=not bool(args.no_rope),
+        ffn_variant=str(args.ffn_variant),
         compile=bool(args.compile),
         checkpoint_interval=int(args.ckpt_interval),
     )

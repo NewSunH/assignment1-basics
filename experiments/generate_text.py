@@ -177,6 +177,8 @@ def main() -> None:
         d_ff=int(run_cfg["d_ff"]),
         rope_theta=float(run_cfg["rope_theta"]),
         use_rmsnorm=bool(run_cfg.get("use_rmsnorm", True)),
+        use_rope=bool(run_cfg.get("use_rope", True)),
+        ffn_variant=str(run_cfg.get("ffn_variant", "swiglu")),
         device=device,
         dtype=(
             torch.bfloat16
