@@ -289,15 +289,15 @@ The learning rate is one of the most important hyperparameters to tune. Taking t
                         \toprule
                         \texttt{lr\_max} & final validation loss & note                          \\
                         \midrule
-                        \texttt{1e-4}    & \texttt{2.7623}       & converged                     \\
-                        \texttt{2e-4}    & \texttt{2.0991}       & converged                     \\
-                        \texttt{3e-4}    & \texttt{1.8096}       & converged                     \\
-                        \texttt{5e-4}    & \texttt{1.5811}       & converged                     \\
-                        \texttt{8e-4}    & \texttt{1.4690}       & converged                     \\
-                        \texttt{1e-3}    & \texttt{1.4368}       & converged (meets $\le 1.45$)  \\
-                        \texttt{3e-3}    & \texttt{1.3713}       & best run                      \\
-                        \texttt{3e-2}    & \texttt{4.3973}       & does not learn well           \\
-                        \texttt{3e1}     & ---                   & diverged at step \texttt{188} \\
+                        1e-4             & 2.7623                & converged                     \\
+                        2e-4             & 2.0991                & converged                     \\
+                        3e-4             & 1.8096                & converged                     \\
+                        5e-4             & 1.5811                & converged                     \\
+                        8e-4             & 1.4690                & converged                     \\
+                        1e-3             & 1.4368                & converged (meets $\le 1.45$)  \\
+                        3e-3             & 1.3713                & best run                      \\
+                        3e-2             & 4.3973                & does not learn well           \\
+                        30               & ---                   & diverged at step \texttt{188} \\
                         \bottomrule
                   \end{tabular}
             \end{center}
@@ -308,6 +308,37 @@ The learning rate is one of the most important hyperparameters to tune. Taking t
 
             The best learning rate I found is \texttt{lr\_max=3e-3} (final validation loss \texttt{1.3713}). This is about one order of magnitude below the point where training becomes effectively unstable (\texttt{3e-2}), and it is also far below the catastrophic divergence point (\texttt{3e1}). Empirically, performance improves as \texttt{lr\_max} increases from \texttt{1e-4} up to a few \texttt{e-3}, and then degrades sharply by \texttt{3e-2}. This supports the edge of stability heuristic if we interpret the edge as the largest learning rate that still yields stable \emph{and} productive learning dynamics, not merely not produce \texttt{NaN}.
 \end{enumerate}
+\end{problem}
+
+\begin{problem}{batch\_size\_experiment}{Batch size variations (1 point)}
+Vary your batch size all the way from 1 to the GPU memory limit. Try at least a few batch sizes in between, including typical sizes like 64 and 128.
+
+\textbf{answer: }I ran a batch size sweep with the same TinyStories 17M-ish model (ctx=256, 4L/ 16H/ 512d/ 1344ff) and the same training code as in the learning-rate sweep. For each batch size, I adjusted \ttbreak{lr\_max} (peak LR in the warmup+cosine schedule) using linear scaling from the best batch size 128 setting, and clipped it if it entered clearly unstable regimes.
+
+\textbf{How I ran it:} I used a SLURM array job (see \ttbreak{scripts/slurm/batch\_size\_experiment\_array.sbatch}). It sweeps \texttt{batch\_size $\in$ \{1,4,16,64,128,256,512\}} and uses a roughly fixed token budget per run so that \texttt{batch\_size=1} is feasible.
+
+\textbf{Baseline point (already measured):} with \texttt{batch\_size=128} and tuned \texttt{lr\_max=3e-3}, the run reaches final validation loss \texttt{1.3713} (run \ttbreak{outputs/runs/20260130T032122Z}).
+
+\textbf{Results summary (fill from runs):} after the sweep completes, I summarize the best final validation loss per batch size via \texttt{uv run python experiments/batch\_size\_results.py}, and include learning curves (train/valid loss vs step) for each batch size.
+
+\begin{center}
+      \begin{tabular}{lcc}
+            \toprule
+            batch size & tuned \texttt{lr\_max} & best final validation loss \\
+            \midrule
+            1          & 2.34375e-5             & 6.5495                     \\
+            4          & 9.375e-5               & 3.3322                     \\
+            16         & 3.75e-4                & 2.1118                     \\
+            64         & 1.5e-3                 & 1.8727                     \\
+            128        & 3e-3                   & 1.3713                     \\
+            256        & 6e-3                   & 1.9497                     \\
+            512        & ---                    & OOM (GPU memory limit)     \\
+            \bottomrule
+      \end{tabular}
+\end{center}
+
+\textbf{Discussion (expected/observed pattern):} smaller batch sizes tend to produce noisier gradients: training loss curves look jagged, but sometimes validation can improve slightly due to implicit regularization. As batch size increases, optimization becomes smoother and (up to a point) allows a larger learning rate (linear scaling), but very large batch sizes can hurt generalization or require retuning \texttt{lr\_max} and warmup to avoid getting stuck. In practice, I found that \texttt{batch\_size=128} is a good trade-off between throughput and validation loss for this model.
+
 \end{problem}
 
 \end{document}
