@@ -447,6 +447,41 @@ Deliverable: A few sentences discussing your findings.
 \begin{problem}{main\_experiment}{Experiment on OWT (2 points)}
 Train your language model on OpenWebText with the same model architecture and total training iterations as TinyStories. How well does this model do? Deliverable: A learning curve of your language model on OpenWebText. Describe the difference in losses from TinyStories – how should we interpret these losses?
 Deliverable: Generated text from OpenWebText LM, in the same format as the TinyStories outputs. How is the fluency of this text? Why is the output quality worse even though we have the same model and compute budget as TinyStories?
+
+\textbf{answer: }I trained the same 17M-ish Transformer LM configuration as the TinyStories baseline (ctx=256, 4L/16H/512d/1344ff, RoPE+RMSNorm+SwiGLU, 10k steps) on the provided OpenWebText (OWT) sample.
+
+\textbf{Tokenization: }I pretokenized OWT using my OWT-trained 32K BPE tokenizer (\texttt{outputs/owt\_vocab.json} + \texttt{outputs/owt\_merges.txt}). Accordingly, I trained the LM with \texttt{vocab\_size=32000} so token IDs stay in range.
+
+\textbf{Run directory: }\ttbreak{outputs/runs/main\_experiment\_owt\_lr3e-3\_steps10000\_seed0-478175}
+
+\textbf{Final metrics: }final validation loss \texttt{4.0748} after \texttt{10000} steps (\texttt{327,680,000} tokens processed), wallclock \texttt{1587.5s} (\texttt{26.5} minutes; \(\approx 2.06\times 10^5\) tokens/s).
+
+\textbf{Learning curve (OWT):}
+\begin{center}
+      \IfFileExists{figures/main_experiment_owt_learning_curve.pdf}{%
+            \includegraphics[width=0.98\linewidth]{figures/main_experiment_owt_learning_curve.pdf}
+      }{%
+            \fbox{\parbox{0.95\linewidth}{\centering Figure missing: \texttt{figures/main\_experiment\_owt\_learning\_curve.pdf}\\
+                        After the OWT run finishes, create TSVs and plot:\\
+                        \ttbreak{uv run python experiments/metrics\_split\_to\_tsv.py outputs/runs/main\_experiment\_owt\_lr3e-3\_steps10000\_seed0/metrics.jsonl}\\
+                        \ttbreak{uv run python experiments/metrics\_split\_to\_tsv.py outputs/runs/main\_experiment\_owt\_lr3e-3\_steps10000\_seed0-478175/metrics.jsonl}\\
+                        \ttbreak{uv run python experiments/plot\_main\_experiment\_owt\_figures.py --owt-run outputs/runs/main\_experiment\_owt\_lr3e-3\_steps10000\_seed0-478175 --ts-run outputs/runs/20260130T032122Z}}}
+      }
+\end{center}
+
+\textbf{Generated text (OWT LM):}
+\IfFileExists{../outputs/runs/main_experiment_owt_lr3e-3_steps10000_seed0-478175/generated_text_clean.txt}{%
+      \inputminted[fontsize=\small,breaklines]{text}{../outputs/runs/main_experiment_owt_lr3e-3_steps10000_seed0-478175/generated_text_clean.txt}
+}{%
+      \fbox{\parbox{0.95\linewidth}{\centering Missing text: \texttt{generated\_text\_clean.txt}\\
+                  Generate from the final checkpoint (on \texttt{cs336dev}):\\
+                  \ttbreak{uv run python experiments/generate\_text.py --run-dir outputs/runs/main\_experiment\_owt\_lr3e-3\_steps10000\_seed0-478175 --vocab outputs/owt\_vocab.json --merges outputs/owt\_merges.txt --prompt "The following is a story about " --max-new-tokens 512 --temperature 0.9 --top-p 0.95 --ban-eos}\\
+                  Then copy \texttt{generated\_text.txt} to \texttt{generated\_text\_clean.txt} if desired.}}
+}
+
+\textbf{Interpreting losses:} The OWT validation loss (\texttt{4.0748}) is much higher than the TinyStories baseline (\texttt{1.3713} at 10k steps; run \ttbreak{outputs/runs/20260130T032122Z}). This is expected because OWT is far more diverse and noisy, with longer dependencies and many more plausible next tokens per context, so the intrinsic per-token entropy is higher. Therefore, loss values are strongly dataset-dependent and should not be compared across datasets as an absolute measure of "model quality".
+
+\textbf{Fluency and why it can look worse on OWT:} In my sample, the model produces news-like fragments with some topical coherence (international politics), but it quickly becomes rambling and repetitive (e.g., repeated country names) and loses entity-level consistency. With the same compute budget, the model sees far fewer repeats of simple patterns than TinyStories, and OWT has wider style/genre diversity and longer dependencies, which a small model struggles to model; decoding choices (temperature/top-p, EOS handling) can further reduce apparent coherence.
 \end{problem}
 
 \end{document}
