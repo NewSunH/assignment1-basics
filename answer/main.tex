@@ -402,7 +402,7 @@ Deliverable: A learning curve comparing the performance of RoPE and NoPE.
 \textbf{Runs:}
 \begin{itemize}
       \item Baseline (RoPE): \ttbreak{outputs/runs/20260130T032122Z}.
-      \item NoPE (RoPE disabled): \ttbreak{outputs/runs/no\_pos\_emb\_nope\_lr\_...}.
+      \item NoPE (RoPE disabled): \ttbreak{outputs/runs/no\_pos\_emb\_nope\_lr3e-3\_steps2000\_seed0}.
 \end{itemize}
 
 \textbf{Learning curve (RoPE vs NoPE):}
@@ -415,7 +415,7 @@ Deliverable: A learning curve comparing the performance of RoPE and NoPE.
       }
 \end{center}
 
-\textbf{Commentary:} (fill after the NoPE run finishes; expected: removing positional info hurts validation and/or makes optimization harder).
+\textbf{Commentary:} Removing positional information degrades performance. In my short sweep (2000 steps), the best NoPE run occurred at \texttt{lr\_max=3e-3} with final validation loss \texttt{1.6630}, while the RoPE baseline achieves \texttt{1.6266} validation loss at step \texttt{2000} (and \texttt{1.3713} when trained to \texttt{10000} steps). Qualitatively, NoPE learns but converges to a worse validation loss than RoPE, consistent with positional information being important for language modeling.
 \end{problem}
 
 \begin{problem}{swiglu\_ablation}{SwiGLU vs. SiLU (1 point)}
@@ -426,8 +426,8 @@ Deliverable: A few sentences discussing your findings.
 
 \textbf{Runs:}
 \begin{itemize}
-      \item Baseline (SwiGLU): \ttbreak{outputs/runs/20260130T032122Z}.
-      \item SiLU FFN (matched params): \ttbreak{outputs/runs/swiglu\_ablation\_silu\_lr\_...}.
+      \item SwiGLU FFN: \ttbreak{outputs/runs/swiglu\_ablation\_swiglu\_lr3e-3\_steps2000\_seed0}.
+      \item SiLU FFN (matched params): \ttbreak{outputs/runs/swiglu\_ablation\_silu\_lr3e-3\_steps2000\_seed0}.
 \end{itemize}
 
 \textbf{Learning curve (SwiGLU vs SiLU):}
@@ -440,7 +440,13 @@ Deliverable: A few sentences discussing your findings.
       }
 \end{center}
 
-\textbf{Discussion:} (fill after runs; compare stability, speed, and final validation loss).
+\textbf{Discussion:} With approximately matched parameter counts, SwiGLU and SiLU perform very similarly in this setup. At \texttt{lr\_max=3e-3} for \texttt{2000} steps, the SwiGLU run reaches final validation loss \texttt{1.5918}, while the SiLU run reaches \texttt{1.5939}. This suggests the gating in SwiGLU is not dramatically better here, but it is at least competitive (slightly better on this run).
+\end{problem}
+
+\subsection{Running on OpenWebText}
+\begin{problem}{main\_experiment}{Experiment on OWT (2 points)}
+Train your language model on OpenWebText with the same model architecture and total training iterations as TinyStories. How well does this model do? Deliverable: A learning curve of your language model on OpenWebText. Describe the difference in losses from TinyStories – how should we interpret these losses?
+Deliverable: Generated text from OpenWebText LM, in the same format as the TinyStories outputs. How is the fluency of this text? Why is the output quality worse even though we have the same model and compute budget as TinyStories?
 \end{problem}
 
 \end{document}
