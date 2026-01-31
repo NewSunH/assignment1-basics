@@ -17,8 +17,8 @@ from cs336_basics import linear
 
 class TransformerBlock(nn.Module):
     mhsa: Mhsa
-    rmsnorm1: RmsNorm
-    rmsnorm2: RmsNorm
+    rmsnorm1: nn.Module
+    rmsnorm2: nn.Module
     ffn: FFN
 
     def __init__(
@@ -28,6 +28,8 @@ class TransformerBlock(nn.Module):
         d_ff: int,
         max_seq_len: int,
         theta: float,
+        *,
+        use_rmsnorm: bool = True,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ):
@@ -40,8 +42,16 @@ class TransformerBlock(nn.Module):
             device=device,
             dtype=dtype,
         )
-        self.rmsnorm1 = RmsNorm(d_model=d_model, device=device, dtype=dtype)
-        self.rmsnorm2 = RmsNorm(d_model=d_model, device=device, dtype=dtype)
+        self.rmsnorm1 = (
+            RmsNorm(d_model=d_model, device=device, dtype=dtype)
+            if use_rmsnorm
+            else nn.Identity()
+        )
+        self.rmsnorm2 = (
+            RmsNorm(d_model=d_model, device=device, dtype=dtype)
+            if use_rmsnorm
+            else nn.Identity()
+        )
         self.ffn = FFN(
             d_model=d_model, d_ff=d_ff, activation=silu, device=device, dtype=dtype
         )
@@ -59,7 +69,7 @@ class TransformerBlock(nn.Module):
 class TransformerLm(nn.Module):
     embedding: Embedding
     transformer_blocks: nn.ModuleList
-    norm: RmsNorm
+    norm: nn.Module
     lm_head: Linear
 
     def __init__(
@@ -71,6 +81,8 @@ class TransformerLm(nn.Module):
         num_heads: int,
         d_ff: int,
         rope_theta: float,
+        *,
+        use_rmsnorm: bool = True,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ):
@@ -92,13 +104,18 @@ class TransformerLm(nn.Module):
                     d_ff=d_ff,
                     max_seq_len=context_length,
                     theta=rope_theta,
+                    use_rmsnorm=use_rmsnorm,
                     device=device,
                     dtype=dtype,
                 )
                 for i in range(num_layers)
             ]
         )
-        self.norm = RmsNorm(d_model=d_model, device=device, dtype=dtype)
+        self.norm = (
+            RmsNorm(d_model=d_model, device=device, dtype=dtype)
+            if use_rmsnorm
+            else nn.Identity()
+        )
         self.lm_head = Linear(d_model, vocab_size, device=device, dtype=dtype)
 
     def forward(

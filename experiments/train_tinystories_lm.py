@@ -57,6 +57,8 @@ class TrainConfig:
     num_heads: int = 16
     rope_theta: float = 10000.0
 
+    use_rmsnorm: bool = True
+
     batch_size: int = 128
     total_steps: int = 10_000
 
@@ -157,6 +159,7 @@ def train_one_run(*, cfg: TrainConfig, run_dir: Path) -> dict[str, Any]:
         num_heads=int(cfg.num_heads),
         d_ff=int(cfg.d_ff),
         rope_theta=float(cfg.rope_theta),
+        use_rmsnorm=bool(cfg.use_rmsnorm),
         device=device,
         dtype=model_dtype,
     )
@@ -325,6 +328,12 @@ def main() -> None:
     p.add_argument("--dtype", choices=["bf16", "fp32"], default="bf16")
     p.add_argument("--seed", type=int, default=0)
 
+    p.add_argument(
+        "--no-rmsnorm",
+        action="store_true",
+        help="If set, removes all RMSNorm layers (ablation).",
+    )
+
     p.add_argument("--eval-interval", type=int, default=200)
     p.add_argument("--eval-batches", type=int, default=200)
     p.add_argument("--log-interval", type=int, default=10)
@@ -360,6 +369,7 @@ def main() -> None:
         eval_batches=int(args.eval_batches),
         seed=int(args.seed),
         dtype=str(args.dtype),
+        use_rmsnorm=not bool(args.no_rmsnorm),
         compile=bool(args.compile),
         checkpoint_interval=int(args.ckpt_interval),
     )

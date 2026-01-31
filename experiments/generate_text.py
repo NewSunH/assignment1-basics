@@ -176,6 +176,7 @@ def main() -> None:
         num_heads=int(run_cfg["num_heads"]),
         d_ff=int(run_cfg["d_ff"]),
         rope_theta=float(run_cfg["rope_theta"]),
+        use_rmsnorm=bool(run_cfg.get("use_rmsnorm", True)),
         device=device,
         dtype=(
             torch.bfloat16
